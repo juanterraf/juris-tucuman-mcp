@@ -1,0 +1,53 @@
+{
+  "manifest_version": "0.3",
+  "name": "juris-tucuman",
+  "display_name": "Jurisprudencia PJ Tucumán",
+  "version": "0.1.0",
+  "description": "MCP server para consultar fallos del Poder Judicial de Tucumán.",
+  "long_description": "Permite que Claude busque jurisprudencia del portal público del Poder Judicial de Tucumán (juris.justucuman.gov.ar), descargue el texto completo de fallos y liste novedades por tribunal. Pensado como herramienta para abogados, estudiantes y consultores legales argentinos. La información NO constituye asesoramiento jurídico — verificar siempre contra la fuente oficial.",
+  "author": {
+    "name": "Juan Terraf",
+    "email": "juanterraf@gmail.com",
+    "url": "https://github.com/juanterraf"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juanterraf/juris-tucuman-mcp"
+  },
+  "homepage": "https://github.com/juanterraf/juris-tucuman-mcp",
+  "documentation": "https://github.com/juanterraf/juris-tucuman-mcp#readme",
+  "license": "MIT",
+  "keywords": ["legal", "jurisprudencia", "argentina", "tucuman", "law", "spanish"],
+  "server": {
+    "type": "python",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["${__dirname}/server/main.py"],
+      "env": {
+        "PYTHONPATH": "${__dirname}/server/lib"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "buscar_fallos",
+      "description": "Busca fallos del PJ Tucumán por descriptores, carátula, partes, número, fechas o tribunal."
+    },
+    {
+      "name": "descargar_texto_fallo",
+      "description": "Descarga el texto íntegro de un fallo dado su número de registro."
+    },
+    {
+      "name": "listar_fallos_recientes",
+      "description": "Lista los fallos más recientes, opcionalmente filtrando por tribunal."
+    }
+  ],
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  }
+}
