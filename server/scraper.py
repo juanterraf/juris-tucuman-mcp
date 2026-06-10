@@ -21,6 +21,82 @@ URL_FORM = f"{BASE}/busca_juris_internet_new.php"
 URL_RES = f"{BASE}/busca_juris_resultado_tabs_new.php"
 URL_FALLO = f"{BASE}/mostrar_fallo_tabs.php"
 
+
+# Lista canónica de tribunales (param `tribunalo` del portal).
+# Extraída del <select name="tribunalo"> del formulario. El valor "00"
+# significa "todos" y no se manda al portal.
+TRIBUNALES: dict[str, str] = {
+    "02": "CAMARA CIVIL EN FAMILIA y SUCESIONES",
+    "03": "CAMARA CIVIL EN DOCUMENTOS Y LOCACIONES",
+    "04": "CAMARA CIVIL Y COMERCIAL COMUN",
+    "05": "CAMARA DEL TRABAJO",
+    "06": "CAMARA PENAL",
+    "07": "CAMARA EN LO CONTENCIOSO ADMINISTRATIVO",
+    "08": "CAMARA CIVIL Y COMERCIAL COMUN - CONCEPCION",
+    "09": "CAMARA CIVIL EN DOC. Y LOC. Y FLIA. Y SUCESIONES - CONCEPCION",
+    "10": "CAMARA PENAL - CONCEPCION",
+    "11": "CAMARA DEL TRABAJO - CONCEPCION",
+    "12": "CAMARA DE FERIA",
+    "13": "CAMARA DE APELACIONES EN LO PENAL DE INSTRUCCION",
+    "14": "JUZGADOS CORRECCIONALES",
+    "15": "JUZGADOS DE INSTRUCCION",
+    "16": "JUZGADOS CORRECCIONALES - CONCEPCION",
+    "17": "JUZGADOS DE INSTRUCCION - CONCEPCION",
+    "18": "JUZGADOS DE INSTRUCCION - MONTEROS",
+    "19": "CAMARA PENAL - CONCLUSIONAL",
+    "20": "TRIBUNAL DE IMPUGNACION (Capital)",
+    "21": "COLEGIO DE JUECES (Capital)",
+    "22": "TRIBUNAL DE IMPUGNACION (Concepcion y Monteros)",
+    "23": "COLEGIO DE JUECES (Concepcion)",
+    "31": "JUZGADOS DE INSTRUCCION CONCLUSIONAL",
+    "32": "CAMARA PENAL CONCLUSIONAL APELACIONES",
+    "33": "SECRETARIA CONTRAVENCIONAL",
+    "34": "CAMARA CIVIL EN DOC. Y LOCACIONES Y FAMILIA Y SUCES. CONCE - Sala en lo Civil en Familia y Sucesiones",
+    "35": "CAMARA CIVIL EN DOC. Y LOCACIONES Y FAMILIA Y SUCES. CONCE - Sala en lo Civil en Documentos y Locaciones",
+    "36": "CAMARA CIVIL EN FAMILIA Y SUCESIONES (C.J.E.)",
+}
+
+
+def _normalizar(s: str) -> str:
+    """Lowercase, sin tildes, sin signos de puntuación, espacios colapsados."""
+    import unicodedata
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    # Cualquier cosa que no sea letra/dígito → espacio (saca paréntesis,
+    # comas, puntos, guiones, etc.).
+    s = re.sub(r"[^\w\s]", " ", s, flags=re.UNICODE)
+    s = re.sub(r"\s+", " ", s.lower()).strip()
+    return s
+
+
+def resolver_tribunal(texto: str) -> tuple[str | None, list[str]]:
+    """Resuelve un nombre de tribunal a su código del portal.
+
+    Devuelve (codigo, candidatos). Si hay match único, devuelve el código
+    y lista vacía. Si hay ambigüedad o no hay match, devuelve None y la
+    lista de nombres candidatos (vacía si no hay ninguno).
+    """
+    if not texto or not texto.strip():
+        return None, []
+
+    # ¿es un código directo de 2 dígitos?
+    if texto.strip() in TRIBUNALES:
+        return texto.strip(), []
+
+    needle = _normalizar(texto)
+    matches: list[tuple[str, str]] = []
+    for code, name in TRIBUNALES.items():
+        if _normalizar(name) == needle:
+            return code, []  # match exacto, terminamos
+        if needle in _normalizar(name):
+            matches.append((code, name))
+
+    if len(matches) == 1:
+        return matches[0][0], []
+    if len(matches) > 1:
+        return None, [f"{c}: {n}" for c, n in matches]
+    return None, []
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -170,6 +246,12 @@ def _parsear_listado(html: str) -> list[Fallo]:
                 f"{URL_FALLO}?registro={registro.split('-')[0]}&vistab=0"
                 if registro else ""
             )
+
+            # Descartar placeholders del portal: si no hay registro NI
+            # carátula NI fecha, no es un fallo real (es probable que
+            # sea un panel "0 resultados" o similar).
+            if not registro and not caratula and not fecha:
+                continue
 
             fallos.append(Fallo(
                 registro=registro, tribunal=tribunal, caratula=caratula,

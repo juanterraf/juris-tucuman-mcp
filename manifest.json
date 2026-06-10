@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "juris-tucuman",
   "display_name": "Jurisprudencia PJ Tucumán",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server para consultar fallos del Poder Judicial de Tucumán.",
   "long_description": "Permite que Claude busque jurisprudencia del portal público del Poder Judicial de Tucumán (juris.justucuman.gov.ar), descargue el texto completo de fallos y liste novedades por tribunal. Pensado como herramienta para abogados, estudiantes y consultores legales argentinos. La información NO constituye asesoramiento jurídico — verificar siempre contra la fuente oficial.",
   "author": {
@@ -41,6 +41,10 @@
     {
       "name": "listar_fallos_recientes",
       "description": "Lista los fallos más recientes, opcionalmente filtrando por tribunal."
+    },
+    {
+      "name": "listar_tribunales",
+      "description": "Devuelve la lista canónica de tribunales soportados por el portal."
     }
   ],
   "compatibility": {

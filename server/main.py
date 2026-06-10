@@ -115,7 +115,16 @@ def buscar_fallos(
     )] = "",
     tribunal: Annotated[str, Field(
         default="",
-        description="Texto del nombre del tribunal (ej: 'CAMARA DEL TRABAJO')."
+        description=(
+            "Nombre del tribunal o cámara (ej: 'CAMARA DEL TRABAJO', "
+            "'Tribunal de Impugnación Capital', 'Cámara Penal'). Acepta "
+            "cualquier capitalización, tildes y matching parcial. IMPORTANTE: "
+            "el portal trata este filtro como TEMÁTICO/MATERIA, no como "
+            "origen estricto — ej. filtrar por 'CAMARA DEL TRABAJO' también "
+            "trae fallos laborales de la CSJ. Si hay ambigüedad, la tool "
+            "devuelve los candidatos. Usá `listar_tribunales` si no estás "
+            "seguro del nombre exacto."
+        ),
     )] = "",
     max_paginas: Annotated[int, Field(
         default=3, ge=1, le=10,
@@ -133,6 +142,29 @@ def buscar_fallos(
             "cantidad": 0, "fallos": [],
         }
 
+    # Resolver el nombre del tribunal a su código del portal.
+    tribunal_code = ""
+    if tribunal:
+        code, candidatos = scraper.resolver_tribunal(tribunal)
+        if code is None:
+            if candidatos:
+                return {
+                    "error": (
+                        f"Ambigüedad en tribunal='{tribunal}'. "
+                        "Sé más específico. Candidatos:"
+                    ),
+                    "candidatos": candidatos,
+                    "cantidad": 0, "fallos": [],
+                }
+            return {
+                "error": (
+                    f"No reconozco el tribunal '{tribunal}'. "
+                    "Llamá a `listar_tribunales` para ver la lista válida."
+                ),
+                "cantidad": 0, "fallos": [],
+            }
+        tribunal_code = code
+
     sesion = _get_sesion()
     try:
         fallos = scraper.buscar(
@@ -141,7 +173,7 @@ def buscar_fallos(
             actor=actor, demandado=demandado,
             sentencia=sentencia, nexpte=expte,
             fechad=fecha_desde, fechah=fecha_hasta,
-            tribunalo=tribunal, max_paginas=max_paginas,
+            tribunalo=tribunal_code, max_paginas=max_paginas,
         )
     except Exception as e:
         log.exception("Búsqueda falló, reintento con sesión nueva")
@@ -153,7 +185,7 @@ def buscar_fallos(
                 actor=actor, demandado=demandado,
                 sentencia=sentencia, nexpte=expte,
                 fechad=fecha_desde, fechah=fecha_hasta,
-                tribunalo=tribunal, max_paginas=max_paginas,
+                tribunalo=tribunal_code, max_paginas=max_paginas,
             )
         except Exception as e2:
             return {
@@ -167,6 +199,9 @@ def buscar_fallos(
 
     return {
         "cantidad": len(fallos),
+        "tribunal_resuelto": (
+            scraper.TRIBUNALES[tribunal_code] if tribunal_code else None
+        ),
         "fallos": [f.as_dict() for f in fallos],
     }
 
@@ -222,21 +257,48 @@ def descargar_texto_fallo(
 def listar_fallos_recientes(
     tribunal: Annotated[str, Field(
         default="",
-        description="Filtro por nombre de tribunal (opcional)."
+        description=(
+            "Nombre del tribunal (opcional, acepta cualquier capitalización "
+            "y matching parcial). Ej: 'Tribunal de Impugnación', 'Cámara "
+            "Penal'. Vacío = todos los tribunales."
+        ),
     )] = "",
     limit: Annotated[int, Field(
         default=20, ge=1, le=100,
         description="Cuántos fallos devolver (max 100)."
     )] = 20,
 ) -> dict:
+    # Resolver tribunal a código si vino
+    tribunal_code = ""
+    if tribunal:
+        code, candidatos = scraper.resolver_tribunal(tribunal)
+        if code is None:
+            if candidatos:
+                return {
+                    "error": (
+                        f"Ambigüedad en tribunal='{tribunal}'. "
+                        "Sé más específico."
+                    ),
+                    "candidatos": candidatos,
+                    "cantidad": 0, "fallos": [],
+                }
+            return {
+                "error": (
+                    f"No reconozco el tribunal '{tribunal}'. "
+                    "Llamá a `listar_tribunales` para ver la lista válida."
+                ),
+                "cantidad": 0, "fallos": [],
+            }
+        tribunal_code = code
+
     sesion = _get_sesion()
-    # El portal exige al menos UN filtro. Si no hay tribunal, hacemos una
-    # búsqueda con descriptores=' ' que actúa como wildcard.
+    # El portal exige al menos UN filtro. Si no hay tribunal, mandamos
+    # descriptores=' ' como wildcard.
     try:
         fallos = scraper.buscar(
             sesion,
-            descriptores=" " if not tribunal else "",
-            tribunalo=tribunal,
+            descriptores=" " if not tribunal_code else "",
+            tribunalo=tribunal_code,
             max_paginas=max(1, (limit + 49) // 50),
             cantsuma=min(50, limit),
         )
@@ -250,7 +312,28 @@ def listar_fallos_recientes(
     fallos = fallos[:limit]
     return {
         "cantidad": len(fallos),
+        "tribunal_resuelto": (
+            scraper.TRIBUNALES[tribunal_code] if tribunal_code else None
+        ),
         "fallos": [f.as_dict() for f in fallos],
+    }
+
+
+@mcp.tool(
+    name="listar_tribunales",
+    description=(
+        "Devuelve la lista canónica de tribunales soportados por el "
+        "portal con sus códigos. Útil cuando el usuario menciona un "
+        "tribunal con un nombre ambiguo y querés ver las opciones."
+    ),
+)
+def listar_tribunales() -> dict:
+    return {
+        "cantidad": len(scraper.TRIBUNALES),
+        "tribunales": [
+            {"codigo": c, "nombre": n}
+            for c, n in scraper.TRIBUNALES.items()
+        ],
     }
 
 
