@@ -62,6 +62,49 @@ salir del chat.
 > macOS, Linux u otra versión de Python, regeneralo localmente con
 > `./scripts/build.sh` (ver "Build desde fuente" más abajo).
 
+#### Si el doble click no funciona
+
+Pasa cuando Windows/macOS no asocia los `.mcpb` con Claude Desktop. Probá estos caminos en orden:
+
+**Camino 1 — Instalar desde Claude Desktop (más simple)**
+
+1. Abrí **Claude Desktop**.
+2. Andá al menú: **`File` → `Settings`** (Windows/Linux) o **`Claude` → `Settings`** (macOS).
+   Atajo: `Ctrl+,` (Windows/Linux) o `Cmd+,` (macOS).
+3. En la sidebar izquierda, andá a **`Extensions`** (puede aparecer como "Developer" en versiones viejas).
+4. Botón **`Install Extension…`** (o "Install from file").
+5. En el diálogo de selección de archivos, **elegí el `.mcpb` que bajaste**.
+6. Claude Desktop muestra la metadata (nombre, descripción, autor, tools). Apretá **`Install`**.
+7. Reiniciá Claude Desktop (cerralo desde la bandeja del sistema y abrilo de nuevo).
+8. En una conversación nueva, escribí algo como *"buscame fallos sobre despido"* — Claude debería empezar a usar las tools.
+
+**Camino 2 — Abrir el `.mcpb` con Claude Desktop manualmente**
+
+Si Claude Desktop no muestra un menú de Extensions:
+
+- **Windows**: click derecho sobre el `.mcpb` → **`Abrir con…`** → **`Buscar otra app`** → buscá `Claude.exe` (típicamente en `C:\Users\<usuario>\AppData\Local\AnthropicClaude\` o `C:\Program Files\Claude\`). Marcá **"Usar siempre esta app"** y apretá OK.
+- **macOS**: click derecho → **`Abrir con`** → **`Otra…`** → seleccioná `Claude.app` desde `/Applications`. Tildá *"Siempre abrir con"*.
+- **Linux**: depende del file manager. Típicamente: click derecho → `Open with other application` → `Claude`.
+
+Después de asociar, doble click vuelve a funcionar.
+
+**Camino 3 — Si nada del MCPB funciona, instalación manual con Python**
+
+Pasamos del bundle a un setup tradicional. Funciona en cualquier sistema con Python 3.10+. Está en la siguiente sección ([Opción B](#opción-b--manual-con-python-cualquier-plataforma)).
+
+**Camino 4 — Verificar que la extensión quedó cargada**
+
+Después de instalar por cualquier camino:
+
+1. Abrí Claude Desktop → **`Settings` → `Extensions`**.
+2. Tiene que aparecer **"Jurisprudencia PJ Tucumán"** con toggle **activado** (verde) y status "Running" o similar.
+3. En una conversación, escribí `/` (barra) — entre los comandos disponibles debería aparecer alguna referencia a las tools, o al menos no dar error cuando uses una consulta natural.
+
+**Si quedó en error**
+
+- En **`Settings` → `Extensions`** → cliqueá la extensión → **`Logs`** o **`View logs`** para ver qué falló al arrancar.
+- El error más común: Python no está en el PATH del sistema. Solución: instalá Python 3.10+ desde [python.org](https://www.python.org/downloads/) y al instalar tildá **"Add Python to PATH"**.
+
 ### Opción B — Manual con Python (cualquier plataforma)
 
 ```bash
