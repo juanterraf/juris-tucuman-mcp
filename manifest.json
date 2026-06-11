@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "juris-tucuman",
   "display_name": "Jurisprudencia PJ Tucumán",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "MCP server para consultar fallos del Poder Judicial de Tucumán.",
-  "long_description": "Permite que Claude busque jurisprudencia del portal público del Poder Judicial de Tucumán (juris.justucuman.gov.ar), descargue el texto completo de fallos y liste novedades por tribunal. Pensado como herramienta para abogados, estudiantes y consultores legales argentinos. La información NO constituye asesoramiento jurídico — verificar siempre contra la fuente oficial.",
+  "long_description": "Permite que Claude busque jurisprudencia del portal público del Poder Judicial de Tucumán (juris.justucuman.gov.ar), descargue el texto completo de fallos, traiga un fallo por número de registro y liste novedades por tribunal/sala. v1.0 incluye filtrado real por tribunal emisor (79 cámaras/salas), validación robusta de fechas y queries, y warnings explícitos cuando el portal devolvió resultados parciales. Pensado como herramienta para abogados, estudiantes y consultores legales argentinos. La información NO constituye asesoramiento jurídico — verificar siempre contra la fuente oficial.",
   "author": {
     "name": "Juan Terraf",
     "email": "juanterraf@gmail.com",
@@ -17,7 +17,7 @@
   "homepage": "https://github.com/juanterraf/juris-tucuman-mcp",
   "documentation": "https://github.com/juanterraf/juris-tucuman-mcp#readme",
   "license": "MIT",
-  "keywords": ["legal", "jurisprudencia", "argentina", "tucuman", "law", "spanish"],
+  "keywords": ["legal", "jurisprudencia", "argentina", "tucuman", "law", "spanish", "fallos"],
   "server": {
     "type": "python",
     "entry_point": "server/main.py",
@@ -32,11 +32,15 @@
   "tools": [
     {
       "name": "buscar_fallos",
-      "description": "Busca fallos del PJ Tucumán por descriptores, carátula, partes, número, fechas o tribunal."
+      "description": "Busca fallos por descriptores, carátula, partes, número, fechas, tribunal emisor y/o solo doctrina legal."
+    },
+    {
+      "name": "obtener_fallo_por_registro",
+      "description": "Trae un fallo completo (metadata + texto íntegro) por número de registro en una sola llamada."
     },
     {
       "name": "descargar_texto_fallo",
-      "description": "Descarga el texto íntegro de un fallo dado su número de registro."
+      "description": "Compat v0.1.x: descarga texto íntegro de un fallo dado su número de registro."
     },
     {
       "name": "listar_fallos_recientes",
@@ -44,7 +48,7 @@
     },
     {
       "name": "listar_tribunales",
-      "description": "Devuelve la lista canónica de tribunales soportados por el portal."
+      "description": "Devuelve la lista canónica de tribunales (79 emisores con sub-salas + 28 de origen de casación)."
     }
   ],
   "compatibility": {
