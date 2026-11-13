@@ -11,7 +11,10 @@ echo "==> Limpiando server/lib/ y .mcpb previos..."
 rm -rf server/lib *.mcpb
 
 echo "==> Instalando deps Python en server/lib/..."
-python -m pip install --target server/lib --upgrade -r requirements.txt
+python -m pip install --no-compile --target server/lib --upgrade -r requirements.txt
+
+echo "==> Sacando bytecode compilado (lleva rutas de la máquina que arma el paquete)..."
+find server -name __pycache__ -type d -prune -exec rm -rf {} +
 
 echo "==> Empaquetando .mcpb..."
 npx --yes @anthropic-ai/mcpb pack

@@ -1,0 +1,3 @@
+# Bytecode compilado: lleva rutas de la máquina que arma el paquete
+__pycache__/
+*.pyc
